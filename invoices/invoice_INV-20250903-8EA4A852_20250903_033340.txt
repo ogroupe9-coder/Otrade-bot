@@ -1,0 +1,26 @@
+OTRADE INVOICE
+==============
+Invoice Number: INV-20250903-8EA4A852
+Session ID: cli_bb3acc8d
+Date: 2025-09-03 03:33:40
+
+
+SHIPPING DETAILS:
+-----------------
+Destination: Assist
+City: Assist
+Address: you'd like me to use? Once I have that
+Incoterm: CIF
+
+PRODUCTS:
+---------
+Re Looking: $10.00 x 1 = $10.00
+
+
+TOTAL: $10.00
+
+PAYMENT:
+--------
+Payment Option: Full Payment Upfront
+
+Thank you for choosing OTRADE!
