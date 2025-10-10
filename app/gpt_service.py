@@ -88,25 +88,21 @@ class GPTService:
                 "Never wrap JSON in code fences. Never add text after it.\n\n"
                 "The JSON schema is exactly:\n"
                 "{\n"
-                '  \"category\": \"Products & Sourcing\" | \"Logistics & Shipping\" | \"Payments & Finance\" | \"Guarantees & Quality\" | \"Relationship & Psychology\",\n'
-                '  \"ready_for_pdf\": boolean,\n'
-                '  \"product_name\": string | null,\n'
-                '  \"quantity\": number | null,\n'
-                '  \"destination_country\": string | null,\n'
-                '  \"city\": string | null,\n'
-                '  \"street_address\": string | null,\n'
-                '  \"shipping_incoterm\": \"FOB\" | \"CIF\" | null,\n'
-                '  \"payment_option\": string | null\n'
+                '  "category": "Products & Sourcing" | "Logistics & Shipping" | "Payments & Finance" | "Guarantees & Quality" | "Relationship & Psychology",\n'
+                '  "ready_for_pdf": boolean,\n'
+                '  "product_name": string | null,\n'
+                '  "quantity": number | null,\n'
+                '  "quantity_unit": string | null,\n'  
+                '  "destination_country": string | null,\n'
+                '  "city": string | null,\n'
+                '  "street_address": string | null,\n'
+                '  "shipping_incoterm": "FOB" | "CIF" | null,\n'
+                '  "payment_option": string | null\n'
                 "}\n\n"
                 "Rules:\n"
-                "- Always extract and persist details (product, quantity, country, city, street, incoterm, payment) from user messages into the JSON.\n"
-                "- If the user provides new information (e.g., country = Canada), update the JSON with that value.\n"
-                "- Never leave fields null if the user already gave that information in this or previous messages.\n"
-                "- Always carry forward existing state unless the user explicitly changes something.\n"
-                "- Do NOT reset fields to null unless the user explicitly clears them.\n"
-                "- Use the conversation history and session state to fill missing values.\n"
-                "- Confirm progress naturally in your reply, but ensure JSON is always complete and consistent with what is known.\n"
+                "..."
             )
+
 
 
             # Build GPT messages

@@ -23,6 +23,7 @@ class GPTMetadata(BaseModel):
     ready_for_pdf: bool = False
     product_name: Optional[str] = None
     quantity: Optional[int] = None
+    quantity_unit: Optional[str] = None  # carton, pallet, container, etc.
     destination_country: Optional[str] = None
     city: Optional[str] = None
     street_address: Optional[str] = None
@@ -69,6 +70,7 @@ class OrderData(BaseModel):
     session_id: str
     products: List[Dict[str, Any]]
     quantity: int
+    quantity_unit: str
     destination_country: str
     city: str
     street_address: str

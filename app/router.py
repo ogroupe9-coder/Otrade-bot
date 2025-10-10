@@ -9,6 +9,7 @@ from .gpt_service import gpt_service
 from .woocommerce_service import woocommerce_service
 from .pdf_service import pdf_service
 from .supabase_service import supabase_service
+from .whatsapp_service import whatsapp_service
 
 logger = logging.getLogger(__name__)
 
@@ -34,45 +35,18 @@ class Router:
             ready_for_pdf = metadata.ready_for_pdf if metadata else False
 
             # 2) Load current session state
-            session = await supabase_service.ensure_session(request.session_id)
+            session = await supabase_service.ensure_session(request.session_id, phone_number=request.phone_number)
             session_state: Dict[str, Any] = session.get("state", {}) if session else {}
 
             # 3) Merge GPT metadata into session state (never downgrade existing values)
             if metadata:
-                if metadata.product_name:
-                    session_state["last_product"] = metadata.product_name
-                elif "last_product" in session_state:
-                    metadata.product_name = session_state["last_product"]
-
-                if metadata.quantity is not None:
-                    session_state["quantity"] = metadata.quantity
-                elif "quantity" in session_state:
-                    metadata.quantity = session_state["quantity"]
-
-                if metadata.destination_country:
-                    session_state["destination_country"] = metadata.destination_country
-                elif "destination_country" in session_state:
-                    metadata.destination_country = session_state["destination_country"]
-
-                if metadata.city:
-                    session_state["city"] = metadata.city
-                elif "city" in session_state:
-                    metadata.city = session_state["city"]
-
-                if metadata.street_address:
-                    session_state["street_address"] = metadata.street_address
-                elif "street_address" in session_state:
-                    metadata.street_address = session_state["street_address"]
-
-                if metadata.shipping_incoterm:
-                    session_state["shipping_incoterm"] = metadata.shipping_incoterm
-                elif "shipping_incoterm" in session_state:
-                    metadata.shipping_incoterm = session_state["shipping_incoterm"]
-
-                if metadata.payment_option:
-                    session_state["payment_option"] = metadata.payment_option
-                elif "payment_option" in session_state:
-                    metadata.payment_option = session_state["payment_option"]
+                md = metadata.dict()
+                for key, value in md.items():
+                    if value is not None:
+                        session_state[key] = value
+                # 🔁 Back-compat: keep last_product in sync if product_name is set
+                if md.get("product_name"):
+                    session_state["last_product"] = md["product_name"]
 
             # 4) Save updated state back to Supabase
             await supabase_service.update_session_state(request.session_id, session_state)
@@ -88,12 +62,31 @@ class Router:
             # 6) Handle PDF generation
             if ready_for_pdf:
                 order_data = self._build_order_data(request.session_id, session_state)
+                logger.info(f"[PDF DEBUG] ready_for_pdf=True, session_state={session_state}")
+                logger.info(f"[PDF DEBUG] order_data={order_data}")
+
                 if order_data:
+                    # Step 1️⃣: Generate PDF and upload to Supabase (also inserts invoice row)
                     pdf_url = await pdf_service.generate_invoice(request.session_id, order_data)
+                    logger.info(f"[PDF DEBUG] pdf_url={pdf_url}")
+
                     if pdf_url:
+                        # Step 2️⃣: Send WhatsApp message with invoice link (use request.phone_number)
+                        try:
+                            if request.phone_number:
+                                await whatsapp_service.send_message(
+                                    request.phone_number,
+                                    f"✅ Your order has been confirmed!\nHere’s your invoice:\n{pdf_url}"
+                                )
+                        except Exception as e:
+                            logger.error(f"[WHATSAPP DEBUG] Error sending invoice link: {e}", exc_info=True)
+
+                        # Also append link to the chat response
                         enhanced_response += f"\n\n📄 Your invoice has been generated: {pdf_url}"
                     else:
                         enhanced_response += "\n\n⚠️ Invoice generated locally but upload failed. Please contact support."
+                else:
+                    logger.warning("[PDF DEBUG] Order data incomplete — skipping PDF generation.")
 
             # 📝 Log bot response
             await supabase_service.save_message(
@@ -113,7 +106,9 @@ class Router:
 
         except Exception as e:
             logger.error(f"Error in router processing: {str(e)}", exc_info=True)
-            fallback_msg = "I’m sorry — I’m having trouble responding right now. Could you please try again?"
+            fallback_msg = (
+                "I’m sorry — I’m having trouble responding right now. Could you please try again?"
+            )
 
             # 📝 Log bot error response
             await supabase_service.save_message(
@@ -146,7 +141,9 @@ class Router:
                     {"name": p.name, "description": p.description or ""}
                     for p in products
                 ]
-                logger.info(f"Cached {len(session_state['catalog'])} products for session {request.session_id}")
+                logger.info(
+                    f"Cached {len(session_state['catalog'])} products for session {request.session_id}"
+                )
             return base_response
         except Exception as e:
             logger.error(f"Error routing category {category}: {str(e)}", exc_info=True)
@@ -155,9 +152,11 @@ class Router:
     def _build_order_data(self, session_id: str, state: Dict[str, Any]) -> Optional[OrderData]:
         """Builds an OrderData object from session state (only when complete)."""
         try:
+            product = state.get("last_product") or state.get("product_name")
             required = [
-                state.get("last_product"),
+                product,
                 state.get("quantity"),
+                state.get("quantity_unit"),
                 state.get("destination_country"),
                 state.get("city"),
                 state.get("street_address"),
@@ -167,18 +166,33 @@ class Router:
             if all(required):
                 return OrderData(
                     session_id=session_id,
-                    products=[{
-                        "name": state["last_product"],
-                        "price": 0.0,
-                        "quantity": state["quantity"]
-                    }],
+                    products=[
+                        {
+                            "name": product,
+                            "price": 0.0,
+                            "quantity": state["quantity"],
+                            "quantity_unit": state["quantity_unit"],
+                        }
+                    ],
                     quantity=state["quantity"],
+                    quantity_unit=state["quantity_unit"],
                     destination_country=state["destination_country"],
                     city=state["city"],
                     street_address=state["street_address"],
                     shipping_incoterm=state["shipping_incoterm"],
                     payment_option=state["payment_option"],
                 )
+            # Log what’s missing to speed up debugging
+            missing = []
+            labels = ["product", "quantity", "quantity_unit", "destination_country", "city",
+                      "street_address", "shipping_incoterm", "payment_option"]
+            values = [product, state.get("quantity"), state.get("quantity_unit"),
+                      state.get("destination_country"), state.get("city"), state.get("street_address"),
+                      state.get("shipping_incoterm"), state.get("payment_option")]
+            for k, v in zip(labels, values):
+                if not v:
+                    missing.append(k)
+            logger.warning(f"[PDF DEBUG] OrderData missing fields: {missing}")
             return None
         except Exception as e:
             logger.error(f"Error building order data: {e}", exc_info=True)

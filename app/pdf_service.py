@@ -52,7 +52,7 @@ class PDFService:
                 logger.warning(f"Invoice {invoice_number} generated but not uploaded, using local path.")
                 pdf_url = str(file_path)
 
-            # Save DB record
+            # Save DB record (always attempt, even if local path)
             invoice_record = InvoiceRecord(
                 session_id=session_id,
                 invoice_number=invoice_number,
@@ -114,9 +114,10 @@ class PDFService:
             name = p.get("name", "Unknown Product")
             price = float(p.get("price", 0) or 0)
             qty = int(p.get("quantity", 1) or 1)
+            unit = p.get("quantity_unit", "unit")
             subtotal = price * qty
             total += subtotal
-            c.drawString(50, y, f"{name}: ${price:.2f} x {qty} = ${subtotal:.2f}")
+            c.drawString(50, y, f"{name}: ${price:.2f} x {qty} {unit} = ${subtotal:.2f}")
 
         # Totals
         y -= 40
