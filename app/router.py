@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Router:
     async def process_request(self, request: ChatRequest) -> ChatResponse:
         try:
-            # 📝 Log user message
+            # 📝 Log user message (same as before)
             await supabase_service.save_message(
                 session_id=request.session_id,
                 role="user",
@@ -34,19 +34,23 @@ class Router:
             category = metadata.category if metadata else "Relationship & Psychology"
             ready_for_pdf = metadata.ready_for_pdf if metadata else False
 
-            # 2) Load current session state
-            session = await supabase_service.ensure_session(request.session_id, phone_number=request.phone_number)
+            # 2) Load current session state (same call signature as older version)
+            session = await supabase_service.ensure_session(request.session_id)
             session_state: Dict[str, Any] = session.get("state", {}) if session else {}
 
-            # 3) Merge GPT metadata into session state (never downgrade existing values)
+            # 3) Merge GPT metadata into session state (NEVER DOWNGRADE) — EXACTLY AS OLD LOGIC
             if metadata:
-                md = metadata.dict()
-                for key, value in md.items():
+                for key, value in metadata.dict().items():
                     if value is not None:
                         session_state[key] = value
-                # 🔁 Back-compat: keep last_product in sync if product_name is set
-                if md.get("product_name"):
-                    session_state["last_product"] = md["product_name"]
+                    elif key in session_state:
+                        setattr(metadata, key, session_state[key])
+
+                # (compat) keep product_name and last_product aligned without changing the original rule
+                if getattr(metadata, "product_name", None) and not session_state.get("last_product"):
+                    session_state["last_product"] = metadata.product_name
+                elif session_state.get("last_product") and not getattr(metadata, "product_name", None):
+                    metadata.product_name = session_state["last_product"]
 
             # 4) Save updated state back to Supabase
             await supabase_service.update_session_state(request.session_id, session_state)
@@ -58,6 +62,11 @@ class Router:
                 base_response=gpt_response.natural_response,
                 session_state=session_state,
             )
+
+            # 🧹 5.1) Clean up GPT formatting labels before sending
+            if enhanced_response:
+                for marker in ["Summary:", "Clarification:", "Next step:", "1)", "2)", "3)"]:
+                    enhanced_response = enhanced_response.replace(marker, "").strip()
 
             # 6) Handle PDF generation
             if ready_for_pdf:
