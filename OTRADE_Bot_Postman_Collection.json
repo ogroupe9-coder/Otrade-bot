@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "otrade-bot-collection-001",
+		"name": "OTRADE Bot API Test Collection",
+		"description": "Test collection for OTRADE wholesale trading bot API with WhatsApp integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Status",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Check if the API is running and get version info"
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Health check endpoint to verify service status"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat Endpoints",
+			"item": [
+				{
+					"name": "Simple Chat - Greeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_001\",\n  \"message\": \"Hello, I need help with ordering products\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Start a conversation with greeting"
+					},
+					"response": []
+				},
+				{
+					"name": "Product Inquiry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_002\",\n  \"message\": \"I want to order rice\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Inquire about a specific product (triggers Product & Sourcing category)"
+					},
+					"response": []
+				},
+				{
+					"name": "Specify Quantity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_002\",\n  \"message\": \"I need 50 cartons\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Specify quantity and unit for the order"
+					},
+					"response": []
+				},
+				{
+					"name": "Provide Shipping Details",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_002\",\n  \"message\": \"Ship to Karachi, Pakistan. Address is 123 Main Street. I prefer FOB shipping and 30-day credit payment\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Provide complete shipping information including city, country, address, incoterm, and payment option"
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_002\",\n  \"message\": \"Yes, please confirm the order\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Confirm the order - should trigger PDF invoice generation when all details are complete"
+					},
+					"response": []
+				},
+				{
+					"name": "General Question - Psychology",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session_id\": \"test_session_003\",\n  \"message\": \"How can I improve my business relationships?\",\n  \"phone_number\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Ask a general relationship/psychology question (default category)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WhatsApp Webhook",
+			"item": [
+				{
+					"name": "WhatsApp Incoming Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "From",
+									"value": "whatsapp:+1234567890",
+									"type": "text"
+								},
+								{
+									"key": "To",
+									"value": "whatsapp:+0987654321",
+									"type": "text"
+								},
+								{
+									"key": "Body",
+									"value": "Hello, I need to order cotton",
+									"type": "text"
+								},
+								{
+									"key": "MessageSid",
+									"value": "SM1234567890abcdef",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/webhook/whatsapp",
+							"host": ["{{base_url}}"],
+							"path": ["webhook", "whatsapp"]
+						},
+						"description": "Simulates an incoming WhatsApp message from Twilio webhook"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
