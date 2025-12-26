@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTRADE Bot - Wholesale Trading Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="chat-wrapper">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="header-content">
+                    <div class="bot-avatar">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" rx="16" fill="url(#gradient)"/>
+                            <path d="M16 8C12.69 8 10 10.69 10 14V16C10 17.1 10.9 18 12 18H14V20H18V20H20C21.1 18 22 17.1 22 16V14C22 10.69 19.31 8 16 8ZM13 15C12.45 15 12 14.55 12 14C12 13.45 12.45 13 13 13C13.55 13 14 13.45 14 14C14 14.55 13.55 15 13 15ZM19 15C18.45 15 18 14.55 18 14C18 13.45 18.45 13 19 13C19.55 13 20 13.45 20 14C20 14.55 19.55 15 19 15ZM14 22H18V23H14V22Z" fill="white"/>
+                            <defs>
+                                <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#667eea"/>
+                                    <stop offset="1" stop-color="#764ba2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="header-text">
+                        <h1>OTRADE Bot</h1>
+                        <p class="status">
+                            <span class="status-dot"></span>
+                            <span id="status-text">Online</span>
+                        </p>
+                    </div>
+                </div>
+                <button class="new-chat-btn" id="newChatBtn" title="Start New Conversation">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <div class="welcome-icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <circle cx="32" cy="32" r="32" fill="url(#welcomeGradient)" opacity="0.1"/>
+                            <path d="M32 16C24.28 16 18 22.28 18 30V34C18 36.21 19.79 38 22 38H26V42H38V42H42C44.21 38 46 36.21 46 34V30C46 22.28 39.72 16 32 16ZM26 32C24.9 32 24 31.1 24 30C24 28.9 24.9 28 26 28C27.1 28 28 28.9 28 30C28 31.1 27.1 32 26 32ZM38 32C36.9 32 36 31.1 36 30C36 28.9 36.9 28 38 28C39.1 28 40 28.9 40 30C40 31.1 39.1 32 38 32ZM28 46H36V48H28V46Z" fill="url(#welcomeGradient)"/>
+                            <defs>
+                                <linearGradient id="welcomeGradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#667eea"/>
+                                    <stop offset="1" stop-color="#764ba2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h2>Welcome to OTRADE Bot! 👋</h2>
+                    <p>Your AI-powered wholesale trading assistant</p>
+                    <div class="feature-pills">
+                        <span class="pill">📦 Product Sourcing</span>
+                        <span class="pill">💰 Quote Generation</span>
+                        <span class="pill">📄 Invoice Creation</span>
+                    </div>
+                    <div class="suggestions">
+                        <p class="suggestions-title">Try asking:</p>
+                        <button class="suggestion-btn" onclick="sendSuggestion('I want to order rice')">I want to order rice</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Show me available products')">Show me available products</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('I need help with ordering')">I need help with ordering</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-bubble">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Container -->
+            <div class="input-container">
+                <div class="session-info">
+                    <span class="session-label">Session:</span>
+                    <span class="session-id" id="sessionId">Generating...</span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type your message here..." 
+                        rows="1"
+                        maxlength="1000"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" disabled>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

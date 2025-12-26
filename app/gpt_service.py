@@ -26,7 +26,7 @@ class GPTService:
         self.max_tokens = 800
         self.max_catalog_items = 50     # limit number of products passed to GPT
         self.max_state_keys = 12        # avoid dumping huge states
-        self.history_turns = 4          # number of past user/assistant messages to include
+        self.history_turns = 10         # number of past user/assistant messages to include (increased for better context)
 
     def _load_governor_prompt(self) -> str:
         """Load governor prompt from file or fallback."""
@@ -44,6 +44,54 @@ class GPTService:
         except Exception as e:
             logger.error(f"Error loading governor prompt: {str(e)}")
             return "You are OTRADE sales advisor. Help customers with wholesale trading."
+
+    def _build_context_reminder(self, state: Dict[str, Any]) -> str:
+        """Build a human-readable summary of what's been collected to prevent re-asking."""
+        
+        collected = []
+        missing = []
+        
+        # Required fields for PDF generation
+        required_fields = {
+            "product_name": "Product",
+            "quantity": "Quantity",
+            "quantity_unit": "Unit (carton/pallet/container)",
+            "destination_country": "Destination Country",
+            "city": "City",
+            "street_address": "Street Address",
+            "shipping_incoterm": "Shipping Term (FOB/CIF)",
+            "payment_option": "Payment Option"
+        }
+        
+        for key, label in required_fields.items():
+            value = state.get(key)
+            if value:
+                collected.append(f"✓ {label}: {value}")
+            else:
+                missing.append(f"✗ {label}: NOT YET PROVIDED")
+        
+        summary = "═══════════════════════════════════════\n"
+        summary += "   ORDER INFORMATION TRACKING\n"
+        summary += "═══════════════════════════════════════\n\n"
+        
+        if collected:
+            summary += "✅ CONFIRMED DETAILS (NEVER ask for these again!):\n"
+            summary += "\n".join(f"   {item}" for item in collected) + "\n\n"
+        
+        if missing:
+            summary += "❌ STILL NEEDED (ask ONLY for these missing fields):\n"
+            summary += "\n".join(f"   {item}" for item in missing) + "\n\n"
+        
+        summary += "⚠️ CRITICAL RULES:\n"
+        summary += "   1. If a field is marked with ✓ above, it is CONFIRMED and PERMANENT\n"
+        summary += "   2. NEVER ask for confirmed fields again\n"
+        summary += "   3. NEVER set confirmed fields to null in your JSON response\n"
+        summary += "   4. ONLY ask for fields marked with ✗\n"
+        summary += "   5. In your JSON output, include ALL confirmed fields with their current values\n"
+        summary += "═══════════════════════════════════════\n"
+        
+        return summary
+
 
     async def process_message(self, session_id: str, user_message: str) -> GPTResponse:
         """
@@ -105,9 +153,13 @@ class GPTService:
 
 
 
+            # Build context reminder showing what's confirmed vs missing
+            context_reminder = self._build_context_reminder(safe_state)
+
             # Build GPT messages
             messages: List[Dict[str, str]] = [
                 {"role": "system", "content": system_instruction},
+                {"role": "system", "content": context_reminder},  # NEW: explicit context tracking
                 {"role": "system", "content": self.governor_prompt},
                 {"role": "system", "content": f"Current session state: {json.dumps(safe_state)}"},
             ]

@@ -38,13 +38,16 @@ class Router:
             session = await supabase_service.ensure_session(request.session_id)
             session_state: Dict[str, Any] = session.get("state", {}) if session else {}
 
-            # 3) Merge GPT metadata into session state (NEVER DOWNGRADE) — EXACTLY AS OLD LOGIC
+            # 3) Merge GPT metadata into session state (DEFENSIVE - NEVER DOWNGRADE)
             if metadata:
                 for key, value in metadata.dict().items():
                     if value is not None:
+                        # GPT provided a value, update state
                         session_state[key] = value
-                    elif key in session_state:
+                    elif key in session_state and session_state[key] is not None:
+                        # DEFENSIVE: GPT returned null, but we have a value - keep the old one
                         setattr(metadata, key, session_state[key])
+                        logger.warning(f"[STATE PROTECTION] GPT tried to null out '{key}', preserving: {session_state[key]}")
 
                 # (compat) keep product_name and last_product aligned without changing the original rule
                 if getattr(metadata, "product_name", None) and not session_state.get("last_product"):
